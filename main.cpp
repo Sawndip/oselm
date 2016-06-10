@@ -12,9 +12,9 @@
 using namespace cv;
 using namespace std;
 using namespace std::placeholders;	// for using std::bind
-const int num_train = 6000;
-const int num_test = 1000;
-const int num_neuron = 2000;
+const int num_train = 600;
+const int num_test = 100;
+const int num_neuron = 500;
 const double elm_weight = 1e2;
 const int num_mnist_train = 60000;
 const int num_mnist_test = 10000;
@@ -61,11 +61,11 @@ void test_elm()
 	cout << "Successfully create random samples from MNIST dataset" << endl;
 
 	elm_base<double> elm_classifier(num_neuron, elm_weight);
-	elm_classifier.elm_train(xTrain, yTrain);
-	elm_classifier.elm_test(xTest, yTest);
+	elm_classifier.elm_train((double *)xTrain.data, xTrain.rows, xTrain.cols, (double *)yTrain.data, yTrain.rows, yTrain.cols);
+	elm_classifier.elm_test((double *)xTest.data, xTest.rows, xTest.cols, (double *)yTest.data, yTest.rows, yTest.cols);
 }
 
-void test_oselm()
+/*void test_oselm()
 {
 	mnist mnist_loader;
 	mnist_loader.load_images_mat(IMAGE_TRAIN, MNIST_TRAIN);
@@ -117,11 +117,11 @@ void test_oselm()
 	oselm_classifier.get_stream() << "All accuracies in update process: ";
 	for (auto &a : accuracy) oselm_classifier.get_stream() << a << "\t";
 	cout << "\nTesting for oselm completes." << endl;
-}
+}*/
 
 
 int main()
 {
-	test_oselm();
+	test_elm();
 	return 0;
 }
