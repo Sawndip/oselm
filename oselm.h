@@ -1,19 +1,19 @@
 #pragma once
 #include "elm_base.h"
-#include <opencv2/opencv.hpp>
-#include <vector>
+//#include <opencv2/opencv.hpp>
+//#include <vector>
 
-using std::vector;
+//using std::vector;
 
-template<typename dataT>
-class oselm : public elm_base<dataT>
+template<typename dataT, bool isColMajor = true>
+class oselm : public elm_base<dataT, isColMajor>
 {
 public:
-	//typedef typename elm_base<dataT>::matrixT matrixT;
-	typedef cv::Mat matrixT;
+	typedef typename elm_base<dataT>::matrixT matrixT;
+//	typedef cv::Mat matrixT;
 
-	explicit oselm(int num_neuron)
-		: elm_base(num_neuron, 0)	// we are NOT using regularized ELM
+	explicit oselm(int num_neuron, ostream &os = std::cout)
+		: elm_base(num_neuron, 0, os)	// we are NOT using regularized ELM
 	{}
 
 	explicit oselm(int num_neuron, dataT regularity_const, ostream &os = std::cout)
@@ -22,12 +22,13 @@ public:
 
 	virtual ~oselm() {}
 
-	int oselm_train(const matrixT &xTrain, const matrixT &yTrain)
+	int oselm_train(dataT *xTrain, int xRows, int xCols, 
+		dataT *yTrain, int yRows, int yCols)
 	{
-		CV_Assert(xTrain.rows >= this->m_numNeuron);
-		this->elm_train(xTrain, yTrain);
-		matrixT H = this->compute_H_matrix(xTrain);
-		m_P = (H.t() * H).inv(cv::DECOMP_CHOLESKY);
+		elm_assert(xRows >= this->m_numNeuron);
+		this->elm_train(xTrain, xRows, xCols, yTrain, yRows, yCols);
+		//matrixT H = this->compute_H_matrix(xTrain);
+		//m_P = (H.transpose() * H).ldlt().solve(matrixT::Identity(this->m_numNeuron, this->m_numNeuron));
 		return 0;
 	}
 
