@@ -1,5 +1,4 @@
 #pragma once
-//#include <opencv2/opencv.hpp>
 #include <ctime>
 #include <functional>
 #include <iostream>
@@ -8,10 +7,8 @@
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
 #include <algorithm>
-#include <iterator>
+#include <type_traits>
 
-//using cv::Mat;
-//using cv::RNG;
 using std::function;
 using std::ostream;
 using std::vector;
@@ -19,23 +16,23 @@ using std::clock_t;
 using std::mt19937;
 using std::random_device;
 using std::uniform_real_distribution;
-using std::pair;
 using std::generate_n;
 using std::transform;
-#define elm_assert eigen_assert
+using std::bind;
 
+#define elm_assert eigen_assert
 template<typename dataT> int random_init(dataT *mat, int size, dataT range);
 
-
-template<typename dataT>
+template<typename dataT, bool isColMajor = true>
 class elm_base
 {
+	using C = std::integral_constant<int, Eigen::ColMajor>;
+	using R = std::integral_constant<int, Eigen::RowMajor>;
+	using Cond = std::conditional<isColMajor, C, R>;
 public: 
-	//typedef cv::Mat matrixT;
-	typedef Eigen::Matrix<dataT, Eigen::Dynamic, Eigen::Dynamic> matrixT;
+	typedef Eigen::Matrix<dataT, Eigen::Dynamic, Eigen::Dynamic, Cond::type::value> matrixT;
 	typedef Eigen::Map<matrixT> matrixMapT;
-	//typedef function<void(dataT &, const int *)> functionT;
-	using functionT = function<void(dataT &, const int *)>;	// used by opencv
+	typedef function<dataT(const dataT &)> functionT;
 
 	// m_featureLength is the input dimension
 	// m_numClass is output dimension
@@ -48,15 +45,13 @@ public:
 	explicit elm_base(int num_neuron, dataT regularity_const, ostream &os = std::cout)
 		: m_os(os), m_rng(random_device{}())	// must be initialized
 	{
+		if (!isColMajor) m_os << "Warning: using row major instead of column major.\n";
 		m_numNeuron = num_neuron;
 		m_regConst = regularity_const;
 		m_featureLength = 0;
 		m_numClass = 0;
-		//m_rng = RNG(static_cast<uint64>(time(nullptr)));
-//		m_dataType = parse_data_type<dataT>();
 		m_timer = std::clock();
-//		m_actFunc = [](dataT &t, const int *pos) -> void { t = std::tanh(t); };
-		m_actFunc = [](dataT t) -> dataT { return std::tanh(t); };
+		m_actFunc = [](const dataT &t) -> dataT { return std::tanh(t); };
 		m_range = 0.5;	// heuristic
 	}
 
@@ -71,16 +66,12 @@ public:
 		m_featureLength = xCols;
 		m_numClass = yCols;
 		m_weight = matrixT(m_numNeuron, m_featureLength);
-//		m_featureLength = xTrain.cols;
-//		m_numClass = yTrain.cols;
-//		m_weight.create(m_numNeuron, m_featureLength, m_dataType);
 		matrixMapT xTrain = warp_data(xTrainPtr, xRows, xCols);
 		matrixMapT yTrain = warp_data(yTrainPtr, yRows, yCols);
 		random_init(m_weight.data(), m_weight.size(), m_range);
 		matrixT H = compute_H_matrix(xTrain);
 		matrixT lhs = H.transpose() * H + matrixT::Identity(m_numNeuron, m_numNeuron) * m_regConst;
 		matrixT rhs = H.transpose() * yTrain;
-//		auto isSolved = cv::solve(lhs, rhs, m_beta, cv::DECOMP_CHOLESKY);
 		m_beta = lhs.ldlt().solve(rhs);
 		elm_assert(lhs.ldlt().info() == Eigen::Success);
 		toc();
@@ -98,7 +89,7 @@ public:
 		elm_assert(xCols == m_featureLength);
 		elm_assert(yCols == m_numClass);
 		elm_assert(xRows == yRows);
-		matrixMapT xTest = warp_data(xTestPtr, xRows, yRows);
+		matrixMapT xTest = warp_data(xTestPtr, xRows, xCols);
 		matrixMapT yTest = warp_data(yTestPtr, yRows, yCols);
 		matrixT yPredicted = compute_score(xTest);
 		elm_assert(yPredicted.rows() == yTest.rows());
@@ -142,17 +133,16 @@ public:
 		else	// multiclass problem
 		{
 			int trueCount = 0;
-			int predictedClass[2];
-			int trueClass[2];
+			int dummy;
+			int predictedClass;
+			int trueClass;
 			for (int i = 0; i < yTest.rows(); ++i)
 			{
-//				minMaxIdx(yPredicted.row(i), NULL, NULL, NULL, predictedClass);
-//				minMaxIdx(yTest.row(i), NULL, NULL, NULL, trueClass);
-				yPredicted.row(i).maxCoeff(predictedClass);
-				yTest.row(i).maxCoeff(trueClass);
-				elm_assert(predictedClass[0] == trueClass[0]);
-				elm_assert(predictedClass[0] == 0);
-				if (predictedClass[1] == trueClass[1])
+				yPredicted.row(i).maxCoeff(&dummy, &predictedClass);
+				elm_assert(dummy == 0);
+				yTest.row(i).maxCoeff(&dummy, &trueClass);
+				elm_assert(dummy == 0);
+				if (predictedClass == trueClass)
 				{
 					trueCount++;
 				}
@@ -190,10 +180,8 @@ public:
 	{
 		elm_assert(m_featureLength != 0);
 		elm_assert(input_mat.cols() == m_featureLength);
-		
 		matrixT H = input_mat * m_weight.transpose();
 		transform(H.data(), H.data() + H.size(), H.data(), m_actFunc);
-//		H.forEach<dataT>(m_actFunc);
 		return H;
 	}
 	matrixMapT warp_data(dataT *data_ptr, int nrows, int ncols)
@@ -215,7 +203,6 @@ protected:
 	int m_numClass;
 	dataT m_regConst;
 	mt19937 m_rng;
-	//int m_dataType;
 	dataT m_range; // see function random_init
 	functionT m_actFunc;	// activation function
 	ostream &m_os; // stream for logging
@@ -227,10 +214,11 @@ template<typename dataT>
 int random_init(dataT *mat, int size, dataT range)
 {
 	static mt19937 rng(random_device{}());
-	//elm_assert(mat.rows() > 0 && mat.cols() > 0);
-	uniform_real_distribution<dataT> urd(-range, range);
-	generate_n(mat, size, [&urd]() {return urd(rng);});
-	//generate_n(mat.data(), mat.size(), [&urd, this]() {return urd(this->m_rng);});
-	//m_rng.fill(mat, RNG::UNIFORM, -range, range);
+	uniform_real_distribution<dataT> dist(-range, range);
+	generate_n(mat, size, bind(dist, rng));
 	return 0;
 }
+
+
+
+
