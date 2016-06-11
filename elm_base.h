@@ -179,7 +179,13 @@ public:
 	ostream &get_stream() const { return m_os; }
 	void set_act_func(const functionT &func) { m_actFunc = func; }
 	void set_random_init_range(dataT r) { m_range = r; }
-
+	clock_t tic() { m_timer = std::clock(); return m_timer; }
+	double toc() const
+	{
+		auto elapsed_seconds = static_cast<double>(std::clock() - m_timer) / CLOCKS_PER_SEC;
+		m_os << "Elapsed time: " << elapsed_seconds << "s.\n";
+		return elapsed_seconds;
+	}
 	matrixT compute_H_matrix(const matrixT &input_mat)
 	{
 		elm_assert(m_featureLength != 0);
@@ -227,11 +233,4 @@ int random_init(dataT *mat, int size, dataT range)
 	//generate_n(mat.data(), mat.size(), [&urd, this]() {return urd(this->m_rng);});
 	//m_rng.fill(mat, RNG::UNIFORM, -range, range);
 	return 0;
-}
-inline clock_t tic() { static clock_t timer = std::clock(); return timer; }
-double toc() const
-{
-	auto elapsed_seconds = static_cast<double>(std::clock() - timer) / CLOCKS_PER_SEC;
-	std::cout << "Elapsed time: " << elapsed_seconds << "s.\n";
-	return elapsed_seconds;
 }
