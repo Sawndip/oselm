@@ -22,6 +22,7 @@ using std::bind;
 
 #define elm_assert eigen_assert
 template<typename dataT> int random_init(dataT *mat, int size, dataT range);
+template<typename eigenMatrixT> bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs);
 
 template<typename dataT, bool isColMajor = true>
 class elm_base
@@ -72,8 +73,10 @@ public:
 		matrixT H = compute_H_matrix(xTrain);
 		matrixT lhs = H.transpose() * H + matrixT::Identity(m_numNeuron, m_numNeuron) * m_regConst;
 		matrixT rhs = H.transpose() * yTrain;
-		m_beta = lhs.ldlt().solve(rhs);
-		elm_assert(lhs.ldlt().info() == Eigen::Success);
+		//m_beta = lhs.ldlt().solve(rhs);
+		//elm_assert(lhs.ldlt().info() == Eigen::Success);
+		auto isSolved = solve_eigen(m_beta, lhs, rhs);
+		elm_assert(isSolved);
 		toc();
 		m_os << "--Training is finished.--\n";
 		return 0;
@@ -207,6 +210,8 @@ protected:
 	functionT m_actFunc;	// activation function
 	ostream &m_os; // stream for logging
 	clock_t m_timer; // timing
+
+	// TODO: Disable copy and assign
 };
 
 // initialize each entry of data uniformly in [-range, range].
@@ -219,6 +224,10 @@ int random_init(dataT *mat, int size, dataT range)
 	return 0;
 }
 
-
-
+template<typename eigenMatrixT>
+bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs)
+{
+	sol.noalias() = lhs.ldlt().solve(rhs);
+	return lhs.ldlt().info() == Eigen::Success;
+}
 
