@@ -67,14 +67,12 @@ public:
 		m_featureLength = xCols;
 		m_numClass = yCols;
 		m_weight = matrixT(m_numNeuron, m_featureLength);
-		matrixMapT xTrain = warp_data(xTrainPtr, xRows, xCols);
-		matrixMapT yTrain = warp_data(yTrainPtr, yRows, yCols);
+		matrixMapT xTrain = wrap_data(xTrainPtr, xRows, xCols);
+		matrixMapT yTrain = wrap_data(yTrainPtr, yRows, yCols);
 		random_init(m_weight.data(), m_weight.size(), m_range);
 		matrixT H = compute_H_matrix(xTrain);
 		matrixT lhs = H.transpose() * H + matrixT::Identity(m_numNeuron, m_numNeuron) * m_regConst;
 		matrixT rhs = H.transpose() * yTrain;
-		//m_beta = lhs.ldlt().solve(rhs);
-		//elm_assert(lhs.ldlt().info() == Eigen::Success);
 		auto isSolved = solve_eigen(m_beta, lhs, rhs);
 		elm_assert(isSolved);
 		toc();
@@ -92,8 +90,8 @@ public:
 		elm_assert(xCols == m_featureLength);
 		elm_assert(yCols == m_numClass);
 		elm_assert(xRows == yRows);
-		matrixMapT xTest = warp_data(xTestPtr, xRows, xCols);
-		matrixMapT yTest = warp_data(yTestPtr, yRows, yCols);
+		matrixMapT xTest = wrap_data(xTestPtr, xRows, xCols);
+		matrixMapT yTest = wrap_data(yTestPtr, yRows, yCols);
 		matrixT yPredicted = compute_score(xTest);
 		elm_assert(yPredicted.rows() == yTest.rows());
 		elm_assert(yPredicted.cols() == yTest.cols());
@@ -187,7 +185,7 @@ public:
 		transform(H.data(), H.data() + H.size(), H.data(), m_actFunc);
 		return H;
 	}
-	matrixMapT warp_data(dataT *data_ptr, int nrows, int ncols)
+	matrixMapT wrap_data(dataT *data_ptr, int nrows, int ncols)
 	{
 		return matrixMapT(data_ptr, nrows, ncols);
 
@@ -227,7 +225,7 @@ int random_init(dataT *mat, int size, dataT range)
 template<typename eigenMatrixT>
 bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs)
 {
-	sol.noalias() = lhs.ldlt().solve(rhs);
+	sol = lhs.ldlt().solve(rhs);
 	return lhs.ldlt().info() == Eigen::Success;
 }
 

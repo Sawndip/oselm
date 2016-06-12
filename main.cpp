@@ -12,14 +12,14 @@
 using namespace cv;
 using namespace std;
 using namespace std::placeholders;	// for using std::bind
-const int num_train = 6000;
+const int num_train = 2000;
 const int num_test = 1000;
-const int num_neuron = 2000;
+const int num_neuron = 5000;
 const double elm_weight = 1e2;
 const int num_mnist_train = 60000;
 const int num_mnist_test = 10000;
-const int batch_size = 100;
-const int epoch = 10;
+const int batch_size = 1000;
+const int epoch = 100;
 
 void test_elm()
 {
@@ -58,6 +58,10 @@ void test_elm()
 		yTest.at<double>(i, pos) = 1.;
 		mnist_loader.image_test.row(id).copyTo(xTest.row(i));
 	}
+	xTrain = xTrain.clone();
+	yTrain = yTrain.clone();
+	xTest = xTest.clone();
+	yTest = yTest.clone();
 	cout << "Successfully create random samples from MNIST dataset" << endl;
 
 	elm_base<double, false> elm_classifier(num_neuron, elm_weight);
@@ -65,7 +69,7 @@ void test_elm()
 	elm_classifier.elm_test((double *)xTest.data, xTest.rows, xTest.cols, (double *)yTest.data, yTest.rows, yTest.cols);
 }
 
-/*void test_oselm()
+void test_oselm()
 {
 	mnist mnist_loader;
 	mnist_loader.load_images_mat(IMAGE_TRAIN, MNIST_TRAIN);
@@ -76,10 +80,10 @@ void test_elm()
 	mnist_loader.expand_labels(MNIST_TEST);
 	cout << "Successfully load MNIST dataset" << endl;
 
-	Mat xTrain_init = mnist_loader.image_train(Range(0, num_train), Range::all());
-	Mat yTrain_init = mnist_loader.label_train_expanded(Range(0, num_train), Range::all());
-	Mat xTest_init = mnist_loader.image_test(Range(0, num_test), Range::all());
-	Mat yTest_init = mnist_loader.label_test_expanded(Range(0, num_test), Range::all());
+	Mat xTrain_init = mnist_loader.image_train(Range(0, num_train), Range::all()).clone();
+	Mat yTrain_init = mnist_loader.label_train_expanded(Range(0, num_train), Range::all()).clone();
+	Mat xTest_init = mnist_loader.image_test(Range(0, num_test), Range::all()).clone();
+	Mat yTest_init = mnist_loader.label_test_expanded(Range(0, num_test), Range::all()).clone();
 
 	// Construct consecutive range for update
 	auto l = std::vector<int>(epoch);
@@ -97,31 +101,35 @@ void test_elm()
 //	std::ofstream of("logging.txt", std::ios::out);
 //	CV_Assert(of.is_open() && of.good());
 
-	oselm<double> oselm_classifier(num_neuron, elm_weight);
-	oselm_classifier.oselm_train(xTrain_init, yTrain_init);
-	oselm_classifier.oselm_test(xTest_init, yTest_init);
+	oselm<double, false> oselm_classifier(num_neuron, elm_weight);
+	oselm_classifier.oselm_init_train((double *)xTrain_init.data, xTrain_init.rows, xTrain_init.cols, 
+		(double *)yTrain_init.data, yTrain_init.rows, yTrain_init.cols);
+	oselm_classifier.oselm_test((double *)xTest_init.data, xTest_init.rows, xTest_init.cols, 
+		(double *)yTest_init.data, yTest_init.rows, yTest_init.cols);
 	oselm_classifier.get_stream() << "Testing for initializing oselm is successful." << endl;
 	auto accuracy = std::vector<double>();
 	for (auto e = 0; e != epoch; ++e)
 	{
-		Mat xTrain_new = mnist_loader.image_train(range_train[e], Range::all());
-		Mat yTrain_new = mnist_loader.label_train_expanded(range_train[e], Range::all());
-		Mat xTest_new = mnist_loader.image_test(range_test[e], Range::all());
-		Mat yTest_new = mnist_loader.label_test_expanded(range_test[e], Range::all());
+		Mat xTrain_new = mnist_loader.image_train(range_train[e], Range::all()).clone();
+		Mat yTrain_new = mnist_loader.label_train_expanded(range_train[e], Range::all()).clone();
+		Mat xTest_new = mnist_loader.image_test(range_test[e], Range::all()).clone();
+		Mat yTest_new = mnist_loader.label_test_expanded(range_test[e], Range::all()).clone();
 		oselm_classifier.get_stream() << "**Updating oselm on epoch " << e << endl;
-		oselm_classifier.update(xTrain_new, yTrain_new);
-		auto stats = oselm_classifier.oselm_test(xTest_init, yTest_init);
+		oselm_classifier.update((double *)xTrain_new.data, (double *)yTrain_new.data, batch_size);
+		auto stats = oselm_classifier.oselm_test((double *)xTest_init.data, xTest_init.rows, xTest_init.cols,
+			(double *)yTest_init.data, yTest_init.rows, yTest_init.cols);
 		accuracy.push_back(stats.front());
 	}
 	oselm_classifier.get_stream() << "Testing for updating oselm is successful." << endl;
 	oselm_classifier.get_stream() << "All accuracies in update process: ";
 	for (auto &a : accuracy) oselm_classifier.get_stream() << a << "\t";
 	cout << "\nTesting for oselm completes." << endl;
-}*/
+}
 
 
 int main()
 {
-	test_elm();
+	//test_elm();
+	test_oselm();
 	return 0;
 }
