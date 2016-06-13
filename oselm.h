@@ -64,7 +64,6 @@ public:
 		matrixT rhs = H.transpose() * yTrain;
 		auto isSolved = solve_eigen(this->m_beta, lhs, rhs);
 		elm_assert(isSolved);
-		cout << "-------------->Successfully solved for beta." << endl;
 		//matrixT P_lhs = H.transpose() * H;
 		matrixT P_rhs = matrixT::Identity(this->m_numNeuron, this->m_numNeuron);
 		auto isSolvedP = solve_eigen(m_P, lhs, P_rhs);

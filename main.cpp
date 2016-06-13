@@ -18,8 +18,8 @@ const int num_neuron = 5000;
 const double elm_weight = 1e2;
 const int num_mnist_train = 60000;
 const int num_mnist_test = 10000;
-const int batch_size = 1000;
-const int epoch = 100;
+const int batch_size = 100;
+const int epoch = 20;
 
 void test_elm()
 {
