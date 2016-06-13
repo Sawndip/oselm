@@ -1,4 +1,6 @@
-#pragma once
+#ifndef __ELM_BASE_H_
+#define __ELM_BASE_H_
+
 #include <ctime>
 #include <functional>
 #include <iostream>
@@ -31,6 +33,7 @@ class elm_base
 	using R = std::integral_constant<int, Eigen::RowMajor>;
 	using Cond = std::conditional<isColMajor, C, R>;
 public: 
+	// Deduce Column or Row major at compile time using std::conditional
 	typedef Eigen::Matrix<dataT, Eigen::Dynamic, Eigen::Dynamic, Cond::type::value> matrixT;
 	typedef Eigen::Map<matrixT> matrixMapT;
 	typedef function<dataT(const dataT &)> functionT;
@@ -97,7 +100,8 @@ public:
 		elm_assert(yPredicted.cols() == yTest.cols());
 		dataT accuracy = 0.;
 		auto statistics = vector<dataT>();
-		if (yTest.cols() == 1)	// If a two class problem
+		if (yTest.cols() == 1)	// If a two class problem, notice there should be some ambingurity
+								// with cols == 1 or 2.
 		{
 			int truePos = 0;
 			int falsePos = 0;
@@ -154,7 +158,8 @@ public:
 		m_os << "Accuracy: " << accuracy << "\n";
 		toc();
 		m_os << "--Testing is finished.--\n";
-		return statistics;
+		return statistics;	// for two class problem, statistics = {prob_det, false_alarm, acc}
+							// for multi-class case, statistics = {accuracy}
 	}
 	virtual matrixT compute_score(const matrixT &features)
 	{
@@ -167,7 +172,7 @@ public:
 
 	// utilities
 	void set_seed(unsigned seed) { m_rng.seed(seed); }
-	ostream &get_stream() const { return m_os; }
+	ostream &get_stream() const { return m_os; }	//! TODO: add c style streaming or modify
 	void set_act_func(const functionT &func) { m_actFunc = func; }
 	void set_random_init_range(dataT r) { m_range = r; }
 	int get_feature_length() { return m_featureLength; }
@@ -187,6 +192,7 @@ public:
 		transform(H.data(), H.data() + H.size(), H.data(), m_actFunc);
 		return H;
 	}
+	// wrap the input data into a matrix
 	matrixMapT wrap_data(dataT *data_ptr, int nrows, int ncols)
 	{
 		return matrixMapT(data_ptr, nrows, ncols);
@@ -224,6 +230,7 @@ int random_init(dataT *mat, int size, dataT range)
 	return 0;
 }
 
+// solve least square problem: lhs*sol = rhs
 template<typename eigenMatrixT>
 bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs)
 {
@@ -231,3 +238,4 @@ bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT 
 	return lhs.ldlt().info() == Eigen::Success;
 }
 
+#endif // __ELM_BASE_H_

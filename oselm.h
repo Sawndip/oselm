@@ -1,4 +1,6 @@
-#pragma once
+#ifndef __OSELM_H_
+#define __OSELM_H_
+
 #include "elm_base.h"
 
 template <typename dataT, bool isColMajor = true>
@@ -14,6 +16,11 @@ public:
 
 	virtual ~oselm() {}
 
+	// Update that is central to oselm
+	// Note that run-time sanity check for dimensions of data is not available.
+	// This is because m_featureLength and m_numClass are known in oselm_init_training.
+	// So the user is responsible for ensuring xTrain_new and yTrain_new has the required memory
+	// They will be wrapped into matrix of size  {batch_size, m_featureLength} and {batch_size, m_numClass} respectively.
 	int update(dataT *xTrain_new, dataT *yTrain_new, int batch_size)
 	{
 		this->m_os << "--Update on oselm begins.--\n";
@@ -32,26 +39,22 @@ public:
 		this->m_os << "--Update finishes.--\n";
 		return 0;
 	}
-
+	// This is a wrapper of elm_train for unifying naming.
 	int oselm_init_train(dataT *xTrain, int xRows, int xCols,
 		dataT *yTrain, int yRows, int yCols)
 	{
-		/*elm_assert(xRows >= this->m_numNeuron);
-		this->elm_train(xTrain, xRows, xCols, yTrain, yRows, yCols);
-		matrixMapT xTrainEigen = this->wrap_data(xTrain, xRows, xCols);
-		matrixT H = this->compute_H_matrix(xTrainEigen);
-		solve_eigen<matrixT>(m_P, H.transpose() * H + this->m_regConst * matrixT::Identity(this->m_numNeuron, this->m_numNeuron),
-			matrixT::Identity(this->m_numNeuron, this->m_numNeuron));
-		return 0;*/
 		return elm_train(xTrain, xRows, xCols, yTrain, yRows, yCols);
 	}
-
+	// Reimplement elm_train to calculate the P matrix needed to update in the oselm process.
 	virtual int elm_train(dataT *xTrainPtr, int xRows, int xCols,
 		dataT *yTrainPtr, int yRows, int yCols) override
 	{
 		this->m_os << "--Training begins.--\n";
 		this->tic();
-		//elm_assert(xRows >= this->m_numNeuron);
+		if (abs(this->m_regConst) < 1e-7)  // if not regulairized, inforce the condition to prevent H.t()*H from degrading
+		{
+			elm_assert(xRows >= this->m_numNeuron);
+		}	
 		elm_assert(xRows == yRows);
 		this->m_featureLength = xCols;
 		this->m_numClass = yCols;
@@ -64,7 +67,6 @@ public:
 		matrixT rhs = H.transpose() * yTrain;
 		auto isSolved = solve_eigen(this->m_beta, lhs, rhs);
 		elm_assert(isSolved);
-		//matrixT P_lhs = H.transpose() * H;
 		matrixT P_rhs = matrixT::Identity(this->m_numNeuron, this->m_numNeuron);
 		auto isSolvedP = solve_eigen(m_P, lhs, P_rhs);
 		elm_assert(isSolvedP);
@@ -84,3 +86,5 @@ public:
 protected:
 	matrixT m_P;	// The only matrix that is needed to store.  See paper for details.
 };
+
+#endif // __OSELM_H__
