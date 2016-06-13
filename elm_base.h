@@ -170,6 +170,8 @@ public:
 	ostream &get_stream() const { return m_os; }
 	void set_act_func(const functionT &func) { m_actFunc = func; }
 	void set_random_init_range(dataT r) { m_range = r; }
+	int get_feature_length() { return m_featureLength; }
+	int get_num_classes() { return m_numClass; }
 	clock_t tic() { m_timer = std::clock(); return m_timer; }
 	double toc() const
 	{
