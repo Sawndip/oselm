@@ -61,7 +61,7 @@ public:
 		this->m_weight = matrixT(this->m_numNeuron, this->m_featureLength);
 		matrixMapT xTrain = wrap_data(xTrainPtr, xRows, xCols);
 		matrixMapT yTrain = wrap_data(yTrainPtr, yRows, yCols);
-		random_init(this->m_weight.data(), this->m_weight.size(), this->m_range);
+		random_init(this->m_weight.data(), (int)this->m_weight.size(), this->m_range);
 		matrixT H = this->compute_H_matrix(xTrain);
 		matrixT lhs = H.transpose() * H + matrixT::Identity(this->m_numNeuron, this->m_numNeuron) * this->m_regConst;
 		matrixT rhs = H.transpose() * yTrain;

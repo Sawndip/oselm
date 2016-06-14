@@ -74,6 +74,32 @@ static void oselm_update(int nlhs, mxArray **plhs, int nrhs, const mxArray **prh
     mxCheck(flag == 0, "Update is not successful.");
     return;
 }
+// Usage: oselm_mex("compute_score", oselmObj, xTrain)
+static void oselm_compute_score(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+	if (nrhs != 3)
+		mexErrMsgTxt("Usage: oselm_mex(\"compute_score\", oselmObj, xTrain)");
+	oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+	double *xTrainPtr = mxGetPr(prhs[2]);
+	size_t xrows = mxGetM(prhs[2]);
+	size_t xcols = mxGetN(prhs[2]);
+	mxCheck(xcols == oselmClassifier->get_feature_length(),
+			"Size of X does not align with feature length.");
+	if (nlhs > 0)
+	{
+		//plhs[0] = mxCreateDoubleMatrix((int)xrows, oselmClassifier->get_num_classes(), mxREAL);
+		plhs[0] = mxCreateDoubleMatrix(0, 0, mxREAL);
+		auto M = static_cast<size_t>(xrows);
+		auto N = static_cast<size_t>(oselmClassifier->get_num_classes());
+		mxSetM(plhs[0], M);
+		mxSetN(plhs[0], N);
+		mxSetData(plhs[0], mxMalloc(sizeof(double)*M*N)); // This is more efficient in allocating memory.
+		double *scoresPtr = mxGetPr(plhs[0]);
+		oselmClassifier->compute_score(scoresPtr, xTrainPtr, (int)xrows, (int)xcols, true);
+	}
+	return;
+}
+
 // Usage: oselm_mex("test", oselmObj, xTest, yTest)
 static void oselm_test(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
 {

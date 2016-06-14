@@ -24,6 +24,11 @@ classdef oselm < handle
             oselm_mex('update', this.objectHandle, xTrainNew, yTrainNew);
         end
         
+        %% compute_score: compute score given samples
+        function varargout = compute_score(this, xTrain)
+            [varargout{1:nargout}] = oselm_mex('compute_score', this.objectHandle, xTrain);
+        end
+
         %% Test
         function varargout = test(this, xTest, yTest)
             [varargout{1:nargout}] = oselm_mex('test', this.objectHandle, xTest, yTest);

@@ -19,6 +19,7 @@ using std::mt19937;
 using std::random_device;
 using std::uniform_real_distribution;
 using std::generate_n;
+using std::copy_n;
 using std::transform;
 using std::bind;
 
@@ -72,7 +73,7 @@ public:
 		m_weight = matrixT(m_numNeuron, m_featureLength);
 		matrixMapT xTrain = wrap_data(xTrainPtr, xRows, xCols);
 		matrixMapT yTrain = wrap_data(yTrainPtr, yRows, yCols);
-		random_init(m_weight.data(), m_weight.size(), m_range);
+		random_init(m_weight.data(), (int)m_weight.size(), m_range);
 		matrixT H = compute_H_matrix(xTrain);
 		matrixT lhs = H.transpose() * H + matrixT::Identity(m_numNeuron, m_numNeuron) * m_regConst;
 		matrixT rhs = H.transpose() * yTrain;
@@ -168,7 +169,30 @@ public:
 		elm_assert(m_featureLength == features.cols());
 		return compute_H_matrix(features) * m_beta;
 	}
-
+	// Overloadding function to return scores in the scores ptr
+	// If scores ptr is allocated outside, specify ptr_is_allocated as true.
+	// In this case, the user is responsible to ensure that scores has enough space to hold the data,
+	// name nrows x m_numClass.
+	// If ptr_is_allocated is set to false, the score ptr will point to continues memory containing the data.
+	// User is not responsible for releasing the data since it is the internal ptr of a static Eigen matrix.
+	// In this case, ensure that the ptr is not used when compute_score is called next time.
+	virtual int compute_score(dataT *scores, dataT *features, int nrows, int ncols, bool ptr_is_allocated = true)
+	{
+		matrixMapT featuresMatrix = wrap_data(features, nrows, ncols);
+		if (ptr_is_allocated)
+		{
+			matrixT scoresMatrix = compute_score(featuresMatrix);
+			elm_assert(scoresMatrix.rows() == nrows);
+			elm_assert(scoresMatrix.cols() == m_numClass);
+			copy_n(scoresMatrix.data(), scoresMatrix.size(), scores);
+		}
+		else
+		{
+			static matrixT scoresMatrix = compute_score(featuresMatrix);
+			scores = scoresMatrix.data();
+		}
+		return 0;
+	}
 
 	// utilities
 	void set_seed(unsigned seed) { m_rng.seed(seed); }
@@ -196,7 +220,6 @@ public:
 	matrixMapT wrap_data(dataT *data_ptr, int nrows, int ncols)
 	{
 		return matrixMapT(data_ptr, nrows, ncols);
-
 	}
 	// deduce data type into opencv type
 //	template<typename someType> static int parse_data_type() { elm_assert(false); return -1; }
