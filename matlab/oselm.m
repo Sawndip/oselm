@@ -28,7 +28,10 @@ classdef oselm < handle
         function varargout = compute_score(this, xTrain, varargin)
             [varargout{1:nargout}] = oselm_mex('compute_score', this.objectHandle, xTrain);
             % rescale to probabilty distribution (sum each row to 1)
-            if nargout > 0
+            % The last term determines whether normalization should be performed.
+            normalized = true;
+            if nargin > 2, normalized = varargin{1}; end
+            if nargout > 0 && normalized
                 varargout{1} = bsxfun(@rdivide, exp(varargout{1}), sum(exp(varargout{1}), 2));
                 varargout{1}(isnan(varargout{1})) = 0;
             end
