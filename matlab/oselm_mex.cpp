@@ -136,7 +136,8 @@ static registryT handlers {
     {"delete", oselm_delete},
     {"init_train", oselm_init_train},
     {"update", oselm_update},
-    {"test", oselm_test}
+    {"test", oselm_test},
+    {"compute_score", oselm_compute_score}
 };
 
 void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)

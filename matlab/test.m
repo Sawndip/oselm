@@ -28,3 +28,8 @@ for i = 1:10
     s = oselmClf.test(xTestSmall, yTestSmall);
     stats = [stats, s];
 end
+scores = oselmClf.compute_score(xTestSmall);
+assert(all(size(scores) == size(yTestSmall)));
+[~, predictedIds] = max(scores, [], 2);
+[~, trueIds] = max(yTestSmall, [], 2);
+acc = sum(predictedIds == trueIds)/numel(trueIds);
