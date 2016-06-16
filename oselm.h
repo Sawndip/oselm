@@ -81,7 +81,33 @@ public:
 	{
 		return this->elm_test(xTestPtr, xRows, xCols, yTestPtr, yRows, yCols, threshold);
 	}
-
+	virtual int snapshot(const string &filename) override
+	{
+		auto flag = elm_base<dataT, isColMajor>::snapshot(filename);
+		elm_assert(flag == 0);
+		return serialize(this->m_P, filename, "P");
+	}
+	// Unlike snapshot, there is no way to find the position of each variable,
+	// I have to reimplement this function from scratch.
+	// TODO: Refactor for a cleaner realization that obeys DRY (Don't Repeat Yourself).
+	virtual int load_snapshot(const string &filename) override
+	{
+		fstream in(filename, std::ios::in | std::ios::binary);
+		if (!in.is_open())
+		{
+			m_os << "Cannot load snapshot " << filename << "\n";
+			return 1;
+		}
+		deserialize(this->m_weight, in, "weight");
+		deserialize(this->m_beta, in, "beta");
+		deserialize(this->m_numNeuron, in, "numNeuron");
+		deserialize(this->m_featureLength, in, "featureLength");
+		deserialize(this->m_regConst, in, "regConst");
+		deserialize(this->m_range, in, "range");
+		deserialize(this->m_P, in, "P");
+		in.close();
+		return 0;
+	}
 
 protected:
 	matrixT m_P;	// The only matrix that is needed to store.  See paper for details.

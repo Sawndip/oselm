@@ -20,7 +20,7 @@ oselmClf.test(xTestSmall, yTestSmall);
 
 batch_size = 100;
 stats = [];
-for i = 1:50
+for i = 1:10
     i
     trainRange = perm(batch_size*(i-1)+initTrainSize:batch_size*i+initTrainSize);
     xTrainNew = xTrain(trainRange, :);

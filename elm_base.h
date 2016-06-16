@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <string>
+#include <experimental/filesystem>
 
 using std::function;
 using std::ostream;
@@ -27,28 +28,30 @@ using std::generate_n;
 using std::copy_n;
 using std::transform;
 using std::bind;
+namespace fs = std::experimental::filesystem;
 
 #define elm_assert eigen_assert
 template<typename dataT> int random_init(dataT *mat, int size, dataT range);
 template<typename eigenMatrixT> bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs);
+size_t get_hash(const string &str);
 // Serialization for matrix data
 template<typename eigenMatrixT> int serialize(const eigenMatrixT &mat, const string &filename, const string &matname,
 	typename std::enable_if<std::is_class<eigenMatrixT>::value>::type* = nullptr)
 {
 	using dataT = typename Eigen::internal::traits<eigenMatrixT>::Scalar;
-	fstream out(filename, std::ios::out | std::ios::ate | std::ios::binary);
+	fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
 	if (!out.is_open())
 	{
 		std::cout << "Cannot open file " << filename << std::endl;
 		return 1;
 	}
-	size_t magic = std::hash<string>{}(matname);
+	size_t magic = get_hash(matname);
 	auto nrows = (int)mat.rows();
 	auto ncols = (int)mat.cols();
-	out.write((const char *)&magic, sizeof(size_t));
-	out.write((const char *)&nrows, sizeof(int));
-	out.write((const char *)&ncols, sizeof(int));
-	out.write((const char *)(mat.data()), sizeof(dataT)*nrows*ncols);
+	out.write((char *)&magic, sizeof(size_t));
+	out.write((char *)&nrows, sizeof(int));
+	out.write((char *)&ncols, sizeof(int));
+	out.write((char *)(mat.data()), sizeof(dataT)*nrows*ncols);
 	out.close();
 	return 0;
 }
@@ -56,15 +59,15 @@ template<typename eigenMatrixT> int serialize(const eigenMatrixT &mat, const str
 template<typename scalarT> int serialize(scalarT scalar, const string &filename, const string &scalarname,
 	typename std::enable_if<std::is_fundamental<scalarT>::value>::type* = nullptr)
 {
-	fstream out(filename, std::ios::out | std::ios::ate | std::ios::binary);
+	fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
 	if (!out.is_open())
 	{
 		std::cout << "Cannot open file " << filename << std::endl;
 		return 1;
 	}
-	size_t magic = std::hash<string>{}(scalarname);
-	out.write((const char *)&magic, sizeof(size_t));
-	out.write((const char *)&scalar, sizeof(scalarT));
+	size_t magic = get_hash(scalarname);
+	out.write((char *)&magic, sizeof(size_t));
+	out.write((char *)&scalar, sizeof(scalarT));
 	out.close();
 	return 0;
 }
@@ -78,7 +81,7 @@ int deserialize(eigenMatrixT &m, fstream &in, const string &matname,
 	size_t magic;
 	int nrows, ncols;
 	in.read((char *)&magic, sizeof(size_t));
-	elm_assert(magic == std::hash<string>{}(matname));
+	elm_assert(magic == get_hash(matname));
 	in.read((char *)&nrows, sizeof(int));
 	in.read((char *)&ncols, sizeof(int));
 	m.resize(nrows, ncols);
@@ -93,7 +96,7 @@ int deserialize(scalarT &scalar, fstream &in, const string &scalarname,
 	elm_assert(in.is_open());
 	size_t magic;
 	in.read((char *)&magic, sizeof(size_t));
-	elm_assert(magic == std::hash<string>{}(scalarname));
+	elm_assert(magic == get_hash(scalarname));
 	in.read((char *)&scalar, sizeof(scalarT));
 	return 0;
 }
@@ -294,6 +297,12 @@ public:
 	}
 	virtual int snapshot(const string &filename)
 	{
+		fs::path p = filename;
+		if (fs::exists(p))
+		{
+			m_os << "Warning: " << filename << " already exists.  It will be earsed.\n";
+			fs::remove(p);
+		}
 		int i1 = 1*serialize(this->m_weight, filename, "weight");
 		int i2 = 2*serialize(this->m_beta, filename, "beta");
 		int i3 = 4*serialize(this->m_numNeuron, filename, "numNeuron");
@@ -319,11 +328,6 @@ public:
 		in.close();
 		return 0;
 	}
-	// deduce data type into opencv type
-//	template<typename someType> static int parse_data_type() { elm_assert(false); return -1; }
-//	template<> static int parse_data_type<float>() { return CV_32FC1; }
-//	template<> static int parse_data_type<double>() { return CV_64FC1; }
-//	template<> static int parse_data_type<int>() { return CV_32SC1; }
 protected:
 	matrixT m_weight;
 	matrixT m_beta;
@@ -337,7 +341,7 @@ protected:
 	ostream &m_os; // stream for logging
 	clock_t m_timer; // timing
 
-	// TODO: Disable copy and assign
+	// TODO: a reasonable copy and assign operator (if using Boost::Serialization this seems necessary)
 };
 
 // initialize each entry of data uniformly in [-range, range].
@@ -357,9 +361,14 @@ template<typename eigenMatrixT>
 bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs)
 {
 	//sol = lhs.ldlt().solve(rhs);
-	sol = lhs.selfadjointView<Eigen::Upper>().llt().solve(rhs);
+	sol = lhs.template selfadjointView<Eigen::Upper>().llt().solve(rhs);
 	return lhs.ldlt().info() == Eigen::Success;
 }
-
+inline size_t get_hash(const string &str)
+{
+	size_t val = std::hash<string>{}(str);
+	//std::cout << str << ": " << val << std::endl;
+	return val;
+}
 
 #endif // __ELM_BASE_H__

@@ -1,6 +1,5 @@
 % build oselm
 % EIGEN_DIR = C:\eigen-eigen-07105f7124f9\
-
 if 1
     eigen_dir = 'C:\eigen-eigen-07105f7124f9\';
     mkl_dir = 'C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\mkl\';

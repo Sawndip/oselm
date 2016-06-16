@@ -130,6 +130,31 @@ static void oselm_test(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
     }
     return;
 }
+// Usage: oselm_mex("snapshot", oselmObj, filename)
+static void oselm_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 3)
+        mexErrMsgTxt("Usage: oselm_mex(\"snapshot\", oselmObj, filename");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    // char str[256];
+    // mxCheck(mxGetM(prhs[2]) == 1, "The input filename should be a row vector of chars.");
+    // int mxGetString(prhs[2], str, mxGetM(prhs[2])*mxGetN(prhs[2])+1);
+    oselmClassifier->snapshot(std::string(mxArrayToString(prhs[2])));
+    return;
+}
+// Usage: oselm_mex("load_snapshot", oselmObj, filename)
+static void oselm_load_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 3)
+        mexErrMsgTxt("Usage: oselm_mex(\"load_snapshot\", oselmObj, filename");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    // char str[256];
+    // mxCheck(mxGetM(prhs[2]) == 1, "The input filename should be a row vector of chars.");
+    // int mxGetString(prhs[2], str, mxGetM(prhs[2])*mxGetN(prhs[2])+1);
+    oselmClassifier->load_snapshot(std::string(mxArrayToString(prhs[2])));
+    return;
+}
+
 
 static registryT handlers {
     {"new", oselm_create},
@@ -137,13 +162,17 @@ static registryT handlers {
     {"init_train", oselm_init_train},
     {"update", oselm_update},
     {"test", oselm_test},
-    {"compute_score", oselm_compute_score}
+    {"compute_score", oselm_compute_score},
+    {"snapshot", oselm_snapshot},
+    {"load_snapshot", oselm_load_snapshot}
 };
 
 void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
 {
     if(nrhs < 1)
         mexErrMsgTxt("Usage: oselm_mex(command, arg1, arg2, ...)");
+    // Note that this actually brings memory leaks in mxArrayToString, referring to
+    // http://www.mathworks.com/help/releases/R2016a/matlab/apiref/mxarraytostring.html
     std::string cmd(mxArrayToString(prhs[0]));
     auto search = handlers.find(cmd);
     if (handlers.end() == search)

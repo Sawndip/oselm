@@ -36,6 +36,16 @@ classdef oselm < handle
                 varargout{1}(isnan(varargout{1})) = 0;
             end
         end
+        
+        %% snapshot: save current state for further use
+        function snapshot(this, filename)
+            oselm_mex('snapshot', this.objectHandle, filename);
+        end
+        
+        %% load_snapshot: load a saved snapshot
+        function load_snapshot(this, filename)
+            oselm_mex('load_snapshot', this.objectHandle, filename);
+        end
 
         %% Test
         function varargout = test(this, xTest, yTest)
