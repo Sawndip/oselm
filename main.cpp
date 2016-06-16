@@ -12,9 +12,9 @@
 using namespace cv;
 using namespace std;
 using namespace std::placeholders;	// for using std::bind
-const int num_train = 2000;
-const int num_test = 1000;
-const int num_neuron = 5000;
+const int num_train = 200;
+const int num_test = 100;
+const int num_neuron = 500;
 const double elm_weight = 1e2;
 const int num_mnist_train = 60000;
 const int num_mnist_test = 10000;
@@ -107,7 +107,11 @@ void test_oselm()
 	oselm_classifier.oselm_test((double *)xTest_init.data, xTest_init.rows, xTest_init.cols, 
 		(double *)yTest_init.data, yTest_init.rows, yTest_init.cols);
 	oselm_classifier.get_stream() << "Testing for initializing oselm is successful." << endl;
-	auto accuracy = std::vector<double>();
+	oselm_classifier.snapshot("iter");
+	oselm_classifier.load_snapshot("iter");
+	oselm_classifier.oselm_test((double *)xTest_init.data, xTest_init.rows, xTest_init.cols,
+		(double *)yTest_init.data, yTest_init.rows, yTest_init.cols);
+/*	auto accuracy = std::vector<double>();
 	for (auto e = 0; e != epoch; ++e)
 	{
 		Mat xTrain_new = mnist_loader.image_train(range_train[e], Range::all()).clone();
@@ -123,7 +127,7 @@ void test_oselm()
 	oselm_classifier.get_stream() << "Testing for updating oselm is successful." << endl;
 	oselm_classifier.get_stream() << "All accuracies in update process: ";
 	for (auto &a : accuracy) oselm_classifier.get_stream() << a << "\t";
-	cout << "\nTesting for oselm completes." << endl;
+	cout << "\nTesting for oselm completes." << endl;*/
 }
 
 

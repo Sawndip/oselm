@@ -1,19 +1,24 @@
-#ifndef __ELM_BASE_H_
-#define __ELM_BASE_H_
+#ifndef __ELM_BASE_H__
+#define __ELM_BASE_H__
+
 
 #include <ctime>
 #include <functional>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <random>
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
 #include <algorithm>
 #include <type_traits>
+#include <string>
 
 using std::function;
 using std::ostream;
+using std::fstream;
 using std::vector;
+using std::string;
 using std::clock_t;
 using std::mt19937;
 using std::random_device;
@@ -26,6 +31,72 @@ using std::bind;
 #define elm_assert eigen_assert
 template<typename dataT> int random_init(dataT *mat, int size, dataT range);
 template<typename eigenMatrixT> bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs);
+// Serialization for matrix data
+template<typename eigenMatrixT> int serialize(const eigenMatrixT &mat, const string &filename, const string &matname,
+	typename std::enable_if<std::is_class<eigenMatrixT>::value>::type* = nullptr)
+{
+	using dataT = typename Eigen::internal::traits<eigenMatrixT>::Scalar;
+	fstream out(filename, std::ios::out | std::ios::ate | std::ios::binary);
+	if (!out.is_open())
+	{
+		std::cout << "Cannot open file " << filename << std::endl;
+		return 1;
+	}
+	size_t magic = std::hash<string>{}(matname);
+	auto nrows = (int)mat.rows();
+	auto ncols = (int)mat.cols();
+	out.write((const char *)&magic, sizeof(size_t));
+	out.write((const char *)&nrows, sizeof(int));
+	out.write((const char *)&ncols, sizeof(int));
+	out.write((const char *)(mat.data()), sizeof(dataT)*nrows*ncols);
+	out.close();
+	return 0;
+}
+// Serialization for scalar type
+template<typename scalarT> int serialize(scalarT scalar, const string &filename, const string &scalarname,
+	typename std::enable_if<std::is_fundamental<scalarT>::value>::type* = nullptr)
+{
+	fstream out(filename, std::ios::out | std::ios::ate | std::ios::binary);
+	if (!out.is_open())
+	{
+		std::cout << "Cannot open file " << filename << std::endl;
+		return 1;
+	}
+	size_t magic = std::hash<string>{}(scalarname);
+	out.write((const char *)&magic, sizeof(size_t));
+	out.write((const char *)&scalar, sizeof(scalarT));
+	out.close();
+	return 0;
+}
+// Deserialization for matrix type
+template<typename eigenMatrixT>
+int deserialize(eigenMatrixT &m, fstream &in, const string &matname,
+	typename std::enable_if<std::is_class<eigenMatrixT>::value>::type* = nullptr)
+{
+	using dataT = typename Eigen::internal::traits<eigenMatrixT>::Scalar;
+	elm_assert(in.is_open());
+	size_t magic;
+	int nrows, ncols;
+	in.read((char *)&magic, sizeof(size_t));
+	elm_assert(magic == std::hash<string>{}(matname));
+	in.read((char *)&nrows, sizeof(int));
+	in.read((char *)&ncols, sizeof(int));
+	m.resize(nrows, ncols);
+	in.read((char *)(m.data()), sizeof(dataT)*nrows*ncols);
+	return 0;
+}
+// Deserialization for scalar type
+template<typename scalarT>
+int deserialize(scalarT &scalar, fstream &in, const string &scalarname,
+	typename std::enable_if<std::is_fundamental<scalarT>::value>::type* = nullptr) // SFINAE
+{
+	elm_assert(in.is_open());
+	size_t magic;
+	in.read((char *)&magic, sizeof(size_t));
+	elm_assert(magic == std::hash<string>{}(scalarname));
+	in.read((char *)&scalar, sizeof(scalarT));
+	return 0;
+}
 
 template<typename dataT, bool isColMajor = true>
 class elm_base
@@ -199,8 +270,8 @@ public:
 	ostream &get_stream() const { return m_os; }	//! TODO: add c style streaming or modify
 	void set_act_func(const functionT &func) { m_actFunc = func; }
 	void set_random_init_range(dataT r) { m_range = r; }
-	int get_feature_length() { return m_featureLength; }
-	int get_num_classes() { return m_numClass; }
+	int get_feature_length() const { return m_featureLength; }
+	int get_num_classes() const { return m_numClass; }
 	clock_t tic() { m_timer = std::clock(); return m_timer; }
 	double toc() const
 	{
@@ -221,12 +292,38 @@ public:
 	{
 		return matrixMapT(data_ptr, nrows, ncols);
 	}
+	virtual int snapshot(const string &filename)
+	{
+		int i1 = 1*serialize(this->m_weight, filename, "weight");
+		int i2 = 2*serialize(this->m_beta, filename, "beta");
+		int i3 = 4*serialize(this->m_numNeuron, filename, "numNeuron");
+		int i4 = 8*serialize(this->m_featureLength, filename, "featureLength");
+		int i5 = 16*serialize(this->m_regConst, filename, "regConst");
+		int i6 = 32*serialize(this->m_range, filename, "range");
+		return i1 + i2 + i3 + i4 + i5 + i6;	// This has no use but only brings trouble to myself.
+	}
+	virtual int load_snapshot(const string &filename)
+	{
+		fstream in(filename, std::ios::in | std::ios::binary);
+		if (!in.is_open())
+		{
+			m_os << "Cannot load snapshot " << filename << "\n";
+			return 1;
+		}
+		deserialize(this->m_weight, in, "weight");
+		deserialize(this->m_beta, in, "beta");
+		deserialize(this->m_numNeuron, in, "numNeuron");
+		deserialize(this->m_featureLength, in, "featureLength");
+		deserialize(this->m_regConst, in, "regConst");
+		deserialize(this->m_range, in, "range");
+		in.close();
+		return 0;
+	}
 	// deduce data type into opencv type
 //	template<typename someType> static int parse_data_type() { elm_assert(false); return -1; }
 //	template<> static int parse_data_type<float>() { return CV_32FC1; }
 //	template<> static int parse_data_type<double>() { return CV_64FC1; }
 //	template<> static int parse_data_type<int>() { return CV_32SC1; }
-
 protected:
 	matrixT m_weight;
 	matrixT m_beta;
@@ -254,11 +351,15 @@ int random_init(dataT *mat, int size, dataT range)
 }
 
 // solve least square problem: lhs*sol = rhs
+// Note that for ELM most of the time lhs is positive definite,
+// so the Cholesky decomposition is applied.
 template<typename eigenMatrixT>
 bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs)
 {
-	sol = lhs.ldlt().solve(rhs);
+	//sol = lhs.ldlt().solve(rhs);
+	sol = lhs.selfadjointView<Eigen::Upper>().llt().solve(rhs);
 	return lhs.ldlt().info() == Eigen::Success;
 }
 
-#endif // __ELM_BASE_H_
+
+#endif // __ELM_BASE_H__
