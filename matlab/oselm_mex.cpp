@@ -155,7 +155,6 @@ static void oselm_load_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArra
     return;
 }
 
-
 static registryT handlers {
     {"new", oselm_create},
     {"delete", oselm_delete},

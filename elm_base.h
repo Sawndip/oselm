@@ -14,6 +14,7 @@
 #include <type_traits>
 #include <string>
 #include <experimental/filesystem>
+//#include <boost/filesystem.hpp>
 
 using std::function;
 using std::ostream;
@@ -29,6 +30,7 @@ using std::copy_n;
 using std::transform;
 using std::bind;
 namespace fs = std::experimental::filesystem;
+//namespace fs = boost::filesystem;
 
 #define elm_assert eigen_assert
 template<typename dataT> int random_init(dataT *mat, int size, dataT range);
