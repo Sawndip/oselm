@@ -43,12 +43,16 @@ classdef oselm < handle
         
         %% snapshot: save current state for further use
         function snapshot(this, filename)
+            if ~this.isTrained
+                warning('The classifier is saved before training!');
+            end
             oselm_mex('snapshot', this.objectHandle, filename);
         end
         
         %% load_snapshot: load a saved snapshot
         function load_snapshot(this, filename)
             oselm_mex('load_snapshot', this.objectHandle, filename);
+            this.isTrained = true;
         end
 
         %% Train: if not trained use `init_train`, else use `update`
