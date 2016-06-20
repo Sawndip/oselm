@@ -2,6 +2,7 @@
 classdef oselm < handle
     properties (SetAccess = private, Hidden = true)
         objectHandle; % Handle to the underlying C++ class instance
+        isTrained = false;
     end
     methods
         %% Constructor - Create a new C++ class instance 
@@ -17,15 +18,18 @@ classdef oselm < handle
         %% init_train: Initial stage of training
         function init_train(this, xTrain, yTrain)
             oselm_mex('init_train', this.objectHandle, xTrain, yTrain);
+            this.isTrained = true;
         end
         
         %% update: Update the oselm
         function update(this, xTrainNew, yTrainNew)
+            assert(this.isTrained);
             oselm_mex('update', this.objectHandle, xTrainNew, yTrainNew);
         end
         
         %% compute_score: compute score given samples
         function varargout = compute_score(this, xTrain, varargin)
+            assert(this.isTrained);
             [varargout{1:nargout}] = oselm_mex('compute_score', this.objectHandle, xTrain);
             % rescale to probabilty distribution (sum each row to 1)
             % The last term determines whether normalization should be performed.
@@ -47,8 +51,19 @@ classdef oselm < handle
             oselm_mex('load_snapshot', this.objectHandle, filename);
         end
 
+        %% Train: if not trained use `init_train`, else use `update`
+        % This is reasonable since we use regularized ELM and num_samples < num_neuron is allowed.
+        function train(this, xTrain, yTrain)
+            if this.isTrained
+                update(this, xTrain, yTrain);
+            else
+                init_train(this, xTrain, yTrain);
+            end
+            this.isTrained = true;
+        end
         %% Test
         function varargout = test(this, xTest, yTest)
+            assert(this.isTrained);
             [varargout{1:nargout}] = oselm_mex('test', this.objectHandle, xTest, yTest);
         end
     end
