@@ -131,9 +131,55 @@ void test_oselm()
 }
 
 
+void test_save()
+{
+	mnist mnist_loader;
+	mnist_loader.load_images_mat(IMAGE_TRAIN, MNIST_TRAIN);
+	mnist_loader.load_labels_mat(LABEL_TRAIN, MNIST_TRAIN);
+	mnist_loader.load_images_mat(IMAGE_TEST, MNIST_TEST);
+	mnist_loader.load_labels_mat(LABEL_TEST, MNIST_TEST);
+	mnist_loader.expand_labels(MNIST_TRAIN);
+	mnist_loader.expand_labels(MNIST_TEST);
+	cout << "Successfully load MNIST dataset" << endl;
+
+	Mat xTrain_init = mnist_loader.image_train(Range(0, num_train), Range::all()).clone();
+	Mat yTrain_init = mnist_loader.label_train_expanded(Range(0, num_train), Range::all()).clone();
+	Mat xTest_init = mnist_loader.image_test(Range(0, num_test), Range::all()).clone();
+	Mat yTest_init = mnist_loader.label_test_expanded(Range(0, num_test), Range::all()).clone();
+
+	oselm<double, false> oselm_classifier(num_neuron, elm_weight);
+	oselm_classifier.oselm_init_train((double *)xTrain_init.data, xTrain_init.rows, xTrain_init.cols,
+		(double *)yTrain_init.data, yTrain_init.rows, yTrain_init.cols);
+	oselm_classifier.snapshot("iter2");
+}
+
+void test_load()
+{
+	mnist mnist_loader;
+	mnist_loader.load_images_mat(IMAGE_TRAIN, MNIST_TRAIN);
+	mnist_loader.load_labels_mat(LABEL_TRAIN, MNIST_TRAIN);
+	mnist_loader.load_images_mat(IMAGE_TEST, MNIST_TEST);
+	mnist_loader.load_labels_mat(LABEL_TEST, MNIST_TEST);
+	mnist_loader.expand_labels(MNIST_TRAIN);
+	mnist_loader.expand_labels(MNIST_TEST);
+	cout << "Successfully load MNIST dataset" << endl;
+
+	Mat xTrain_init = mnist_loader.image_train(Range(0, num_train), Range::all()).clone();
+	Mat yTrain_init = mnist_loader.label_train_expanded(Range(0, num_train), Range::all()).clone();
+	Mat xTest_init = mnist_loader.image_test(Range(0, num_test), Range::all()).clone();
+	Mat yTest_init = mnist_loader.label_test_expanded(Range(0, num_test), Range::all()).clone();
+
+	oselm<double, false> oselm_classifier(num_neuron, elm_weight);
+	oselm_classifier.load_snapshot("iter2");
+	oselm_classifier.oselm_test((double *)xTest_init.data, xTest_init.rows, xTest_init.cols,
+		(double *)yTest_init.data, yTest_init.rows, yTest_init.cols);
+}
+
 int main()
 {
 	//test_elm();
-	test_oselm();
+//	test_oselm();
+	test_save();
+	test_load();
 	return 0;
 }

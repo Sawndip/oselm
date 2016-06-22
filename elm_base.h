@@ -311,7 +311,8 @@ public:
 		int i4 = 8*serialize(this->m_featureLength, filename, "featureLength");
 		int i5 = 16*serialize(this->m_regConst, filename, "regConst");
 		int i6 = 32*serialize(this->m_range, filename, "range");
-		return i1 + i2 + i3 + i4 + i5 + i6;	// This has no use but only brings trouble to myself.
+		int i7 = 64 * serialize(this->m_numClass, filename, "numClasses");
+		return i1 + i2 + i3 + i4 + i5 + i6 + i7;	// This has no use but only brings trouble to myself.
 	}
 	virtual int load_snapshot(const string &filename)
 	{
@@ -327,6 +328,7 @@ public:
 		deserialize(this->m_featureLength, in, "featureLength");
 		deserialize(this->m_regConst, in, "regConst");
 		deserialize(this->m_range, in, "range");
+		deserialize(this->m_numClass, in, "numClasses");
 		in.close();
 		return 0;
 	}
