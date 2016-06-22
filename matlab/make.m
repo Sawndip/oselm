@@ -3,7 +3,7 @@
 if 1
     eigen_dir = 'C:\eigen-eigen-07105f7124f9\';
     mkl_dir = 'C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\mkl\';
-    boost_dir = 'C:\boost_1_61_0\'
+    boost_dir = 'C:\boost_1_61_0\';
     mkl_include = fullfile(mkl_dir, 'include');
     mkl_lib = fullfile(mkl_dir, 'lib', 'intel64_win');
     openmp_lib = 'C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2016.3.207\windows\compiler\lib\intel64_win';

@@ -275,8 +275,13 @@ public:
 	ostream &get_stream() const { return m_os; }	//! TODO: add c style streaming or modify
 	void set_act_func(const functionT &func) { m_actFunc = func; }
 	void set_random_init_range(dataT r) { m_range = r; }
+	void set_feature_length(int feat_len) { m_featureLength = feat_len; }
+	void set_num_classes(int nclasses) { m_numClass = nclasses; }
 	int get_feature_length() const { return m_featureLength; }
 	int get_num_classes() const { return m_numClass; }
+	int get_num_neuron() const { return m_numNeuron; }
+	dataT get_random_init_range() const { return m_range; }
+	dataT get_regularity_const() const { return m_regConst; }
 	clock_t tic() { m_timer = std::clock(); return m_timer; }
 	double toc() const
 	{

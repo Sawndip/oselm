@@ -55,6 +55,16 @@ classdef oselm < handle
             this.isTrained = true;
         end
 
+        %% set_variables: set the specified variable of the given variable name
+        function set_variables(this, variable_name, variable_value)
+            oselm_mex('set_variables', this.objectHandle, variable_name, variable_value);
+        end
+
+        %% print_variables: print all internal variables
+        function print_variables(this)
+            oselm_mex('print_variables', this.objectHandle);
+        end
+
         %% Train: if not trained use `init_train`, else use `update`
         % This is reasonable since we use regularized ELM and num_samples < num_neuron is allowed.
         function train(this, xTrain, yTrain)

@@ -134,7 +134,7 @@ static void oselm_test(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
 static void oselm_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
 {
     if (nrhs != 3)
-        mexErrMsgTxt("Usage: oselm_mex(\"snapshot\", oselmObj, filename");
+        mexErrMsgTxt("Usage: oselm_mex(\"snapshot\", oselmObj, filename)");
     oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
     // char str[256];
     // mxCheck(mxGetM(prhs[2]) == 1, "The input filename should be a row vector of chars.");
@@ -146,7 +146,7 @@ static void oselm_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArray **p
 static void oselm_load_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
 {
     if (nrhs != 3)
-        mexErrMsgTxt("Usage: oselm_mex(\"load_snapshot\", oselmObj, filename");
+        mexErrMsgTxt("Usage: oselm_mex(\"load_snapshot\", oselmObj, filename)");
     oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
     // char str[256];
     // mxCheck(mxGetM(prhs[2]) == 1, "The input filename should be a row vector of chars.");
@@ -154,7 +154,45 @@ static void oselm_load_snapshot(int nlhs, mxArray **plhs, int nrhs, const mxArra
     oselmClassifier->load_snapshot(std::string(mxArrayToString(prhs[2])));
     return;
 }
-
+// Usage: oselm_mex("set_variables", oselmObj, variable_name, variable_value)
+static void oselm_set_variables(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 4)
+        mexErrMsgTxt("Usage: oselm_mex(\"set_variables\", oselmObj, variable_name, variable_value)");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    std::string variable_name = std::string(mxArrayToString(prhs[2]));
+    double variable_value = mxGetScalar(prhs[3]);
+    if (variable_name == "feature_length")
+    {
+        oselmClassifier->set_feature_length((int)variable_value);
+        return;
+    }  
+    if (variable_name == "num_classes")
+    {
+        oselmClassifier->set_num_classes((int)variable_value);
+        return;
+    }
+    if (variable_name == "random_init_range")
+    {
+        oselmClassifier->set_random_init_range(variable_value);
+        return;
+    }
+    mexWarnMsgTxt("Cannot find the specified variable; no variable is changed.");
+    return;
+}
+// Usage: oselm_mex("print_variables", oselmObj)
+static void oselm_print_variables(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 2)
+        mexErrMsgTxt("Usage: oselm_mex(\"print_variables\", oselmObj)");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    mexPrintf("m_numNeuron: %d\n", oselmClassifier->get_num_neuron());
+    mexPrintf("m_featureLength: %d\n", oselmClassifier->get_feature_length());
+    mexPrintf("m_numClass: %d\n", oselmClassifier->get_num_classes());
+    mexPrintf("m_regConst: %g\n", oselmClassifier->get_regularity_const());
+    mexPrintf("m_range: %g\n", oselmClassifier->get_random_init_range());
+    return;
+}
 static registryT handlers {
     {"new", oselm_create},
     {"delete", oselm_delete},
@@ -163,15 +201,15 @@ static registryT handlers {
     {"test", oselm_test},
     {"compute_score", oselm_compute_score},
     {"snapshot", oselm_snapshot},
-    {"load_snapshot", oselm_load_snapshot}
+    {"load_snapshot", oselm_load_snapshot},
+    {"set_variables", oselm_set_variables},
+    {"print_variables", oselm_print_variables}
 };
 
 void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
 {
     if(nrhs < 1)
         mexErrMsgTxt("Usage: oselm_mex(command, arg1, arg2, ...)");
-    // Note that this actually brings memory leaks in mxArrayToString, referring to
-    // http://www.mathworks.com/help/releases/R2016a/matlab/apiref/mxarraytostring.html
     std::string cmd(mxArrayToString(prhs[0]));
     auto search = handlers.find(cmd);
     if (handlers.end() == search)
