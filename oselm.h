@@ -89,13 +89,13 @@ public:
 	}
 	// Unlike snapshot, there is no way to find the position of each variable,
 	// I have to reimplement this function from scratch.
-	// TODO: Refactor for a cleaner realization that obeys DRY (Don't Repeat Yourself).
+	// TODO: Refactor for a cleaner realization 
 	virtual int load_snapshot(const string &filename) override
 	{
 		fstream in(filename, std::ios::in | std::ios::binary);
 		if (!in.is_open())
 		{
-			m_os << "Cannot load snapshot " << filename << "\n";
+			this->m_os << "Cannot load snapshot " << filename << "\n";
 			return 1;
 		}
 		deserialize(this->m_weight, in, "weight");
@@ -104,6 +104,7 @@ public:
 		deserialize(this->m_featureLength, in, "featureLength");
 		deserialize(this->m_regConst, in, "regConst");
 		deserialize(this->m_range, in, "range");
+		deserialize(this->m_numClass, in, "numClasses");
 		deserialize(this->m_P, in, "P");
 		in.close();
 		return 0;
