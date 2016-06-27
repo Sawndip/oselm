@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <string>
-#include <experimental/filesystem>
+// #include <experimental/filesystem>
 //#include <boost/filesystem.hpp>
 
 using std::function;
@@ -29,7 +29,7 @@ using std::generate_n;
 using std::copy_n;
 using std::transform;
 using std::bind;
-namespace fs = std::experimental::filesystem;
+// namespace fs = std::experimental::filesystem;
 //namespace fs = boost::filesystem;
 
 #define elm_assert eigen_assert
@@ -37,16 +37,17 @@ template<typename dataT> int random_init(dataT *mat, int size, dataT range);
 template<typename eigenMatrixT> bool solve_eigen(eigenMatrixT &sol, const eigenMatrixT &lhs, const eigenMatrixT &rhs);
 size_t get_hash(const string &str);
 // Serialization for matrix data
-template<typename eigenMatrixT> int serialize(const eigenMatrixT &mat, const string &filename, const string &matname,
-	typename std::enable_if<std::is_class<eigenMatrixT>::value>::type* = nullptr)
+template<typename eigenMatrixT> int serialize(const eigenMatrixT &mat, fstream &out, const string &matname,
+	typename std::enable_if<std::is_class<eigenMatrixT>::value>::type* = nullptr)	// SFINAE
 {
 	using dataT = typename Eigen::internal::traits<eigenMatrixT>::Scalar;
-	fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
-	if (!out.is_open())
-	{
-		std::cout << "Cannot open file " << filename << std::endl;
-		return 1;
-	}
+	// fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
+	// if (!out.is_open())
+	// {
+	// 	std::cout << "Cannot open file " << filename << std::endl;
+	// 	return 1;
+	// }
+	elm_assert(out.is_open());
 	size_t magic = get_hash(matname);
 	auto nrows = (int)mat.rows();
 	auto ncols = (int)mat.cols();
@@ -54,23 +55,24 @@ template<typename eigenMatrixT> int serialize(const eigenMatrixT &mat, const str
 	out.write((char *)&nrows, sizeof(int));
 	out.write((char *)&ncols, sizeof(int));
 	out.write((char *)(mat.data()), sizeof(dataT)*nrows*ncols);
-	out.close();
+	// out.close();
 	return 0;
 }
 // Serialization for scalar type
-template<typename scalarT> int serialize(scalarT scalar, const string &filename, const string &scalarname,
+template<typename scalarT> int serialize(scalarT scalar, fstream &out, const string &scalarname,
 	typename std::enable_if<std::is_fundamental<scalarT>::value>::type* = nullptr)
 {
-	fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
-	if (!out.is_open())
-	{
-		std::cout << "Cannot open file " << filename << std::endl;
-		return 1;
-	}
+	// fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
+	// if (!out.is_open())
+	// {
+	// 	std::cout << "Cannot open file " << filename << std::endl;
+	// 	return 1;
+	// }
+	elm_assert(out.is_open());
 	size_t magic = get_hash(scalarname);
 	out.write((char *)&magic, sizeof(size_t));
 	out.write((char *)&scalar, sizeof(scalarT));
-	out.close();
+	// out.close();
 	return 0;
 }
 // Deserialization for matrix type
@@ -304,19 +306,21 @@ public:
 	}
 	virtual int snapshot(const string &filename)
 	{
-		fs::path p = filename;
-		if (fs::exists(p))
-		{
-			m_os << "Warning: " << filename << " already exists.  It will be earsed.\n";
-			fs::remove(p);
-		}
-		int i1 = 1*serialize(this->m_weight, filename, "weight");
-		int i2 = 2*serialize(this->m_beta, filename, "beta");
-		int i3 = 4*serialize(this->m_numNeuron, filename, "numNeuron");
-		int i4 = 8*serialize(this->m_featureLength, filename, "featureLength");
-		int i5 = 16*serialize(this->m_regConst, filename, "regConst");
-		int i6 = 32*serialize(this->m_range, filename, "range");
-		int i7 = 64 * serialize(this->m_numClass, filename, "numClasses");
+		// fs::path p = filename;
+		// if (fs::exists(p))
+		// {
+		// 	m_os << "Warning: " << filename << " already exists.  It will be earsed.\n";
+		// 	fs::remove(p);
+		// }
+		fstream out(filename, std::ios::out | std::ios::binary);
+		int i1 = 1*serialize(this->m_weight, out, "weight");
+		int i2 = 2*serialize(this->m_beta, out, "beta");
+		int i3 = 4*serialize(this->m_numNeuron, out, "numNeuron");
+		int i4 = 8*serialize(this->m_featureLength, out, "featureLength");
+		int i5 = 16*serialize(this->m_regConst, out, "regConst");
+		int i6 = 32*serialize(this->m_range, out, "range");
+		int i7 = 64 * serialize(this->m_numClass, out, "numClasses");
+		out.close();
 		return i1 + i2 + i3 + i4 + i5 + i6 + i7;	// This has no use but only brings trouble to myself.
 	}
 	virtual int load_snapshot(const string &filename)

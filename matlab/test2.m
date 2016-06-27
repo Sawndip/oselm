@@ -10,7 +10,7 @@ yTrainSmall = yTrainExpanded(perm(1:initTrainSize), :);
 xTestSmall = xTest(perm2, :);
 yTestSmall = yTestExpanded(perm2, :);
 
-numNeuron = 2000;
+numNeuron = 1000;
 regConst = 100;
 
 oselmClf = oselm(numNeuron, regConst);

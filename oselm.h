@@ -85,7 +85,12 @@ public:
 	{
 		auto flag = elm_base<dataT, isColMajor>::snapshot(filename);
 		elm_assert(flag == 0);
-		return serialize(this->m_P, filename, "P");
+		fstream out(filename, std::ios::out | std::ios::app | std::ios::binary);
+		elm_assert(out.is_open());
+		serialize(this->m_P, out, "P");
+		out.close();
+		return 0;
+		// return serialize(this->m_P, filename, "P");
 	}
 	// Unlike snapshot, there is no way to find the position of each variable,
 	// I have to reimplement this function from scratch.
