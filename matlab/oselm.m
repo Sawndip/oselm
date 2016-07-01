@@ -35,7 +35,7 @@ classdef oselm < handle
             % The last term determines whether normalization should be performed.
             normalized = true;
             if nargin > 2, normalized = varargin{1}; end
-            if nargout > 0 && normalized
+            if normalized
                 varargout{1} = bsxfun(@rdivide, exp(varargout{1}), sum(exp(varargout{1}), 2));
                 varargout{1}(isnan(varargout{1})) = 0;
             end
