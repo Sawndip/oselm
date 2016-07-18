@@ -23,5 +23,5 @@ if 1
         boost_lib_vc12_switch, 'boost_filesystem-vc120-mt-1_61.lib', 'boost_filesystem-vc120-mt-gd-1_61.lib', ...
         '-largeArrayDims', '-DEIGEN_USE_MKL_ALL', 'oselm_mex.cpp');
 else
-    mex -I.. -IC:\eigen-eigen-07105f7124f9\ COMPFLAGS="/openmp $COMPFLAGS" -largeArrayDims oselm_mex.cpp
+    mex -v -I.. -IC:\eigen-eigen-07105f7124f9\ COMPFLAGS="/openmp $COMPFLAGS" -largeArrayDims oselm_mex.cpp
 end

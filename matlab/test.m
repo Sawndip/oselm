@@ -5,7 +5,7 @@ end
 rng('shuffle');
 perm = randperm(size(xTrain, 1));
 perm2 = randperm(size(xTest, 1), 1000);
-initTrainSize = 6000;
+initTrainSize = 2000;
 xTrainSmall = xTrain(perm(1:initTrainSize), :);
 yTrainSmall = yTrainExpanded(perm(1:initTrainSize), :);
 xTestSmall = xTest(perm2, :);
@@ -18,7 +18,7 @@ oselmClf = oselm(numNeuron);
 oselmClf.init_train(xTrainSmall, yTrainSmall);
 oselmClf.test(xTestSmall, yTestSmall);
 
-batch_size = 100;
+batch_size = 200;
 stats = [];
 for i = 1:10
     i

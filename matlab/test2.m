@@ -3,8 +3,8 @@ if ~exist('loadMNIST', 'var') || ~loadMNIST
 end
 rng('shuffle');
 perm = randperm(size(xTrain, 1));
-perm2 = randperm(size(xTest, 1), 100);
-initTrainSize = 600;
+perm2 = randperm(size(xTest, 1), 200);
+initTrainSize = 2000;
 xTrainSmall = xTrain(perm(1:initTrainSize), :);
 yTrainSmall = yTrainExpanded(perm(1:initTrainSize), :);
 xTestSmall = xTest(perm2, :);
