@@ -11,7 +11,7 @@ public:
 	using matrixMapT = typename elm_base<dataT, isColMajor>::matrixMapT;
 
 	explicit oselm(int num_neuron, dataT regularity_const = 0, ostream &os = std::cout)
-		: elm_base(num_neuron, regularity_const, os)
+		: elm_base<dataT, isColMajor>(num_neuron, regularity_const, os)
 	{}	// by default regularity_const is set to zero
 
 	virtual ~oselm() {}
@@ -59,8 +59,8 @@ public:
 		this->m_featureLength = xCols;
 		this->m_numClass = yCols;
 		this->m_weight = matrixT(this->m_numNeuron, this->m_featureLength);
-		matrixMapT xTrain = wrap_data(xTrainPtr, xRows, xCols);
-		matrixMapT yTrain = wrap_data(yTrainPtr, yRows, yCols);
+		matrixMapT xTrain = this->wrap_data(xTrainPtr, xRows, xCols);
+		matrixMapT yTrain = this->wrap_data(yTrainPtr, yRows, yCols);
 		random_init(this->m_weight.data(), (int)this->m_weight.size(), this->m_range);
 		matrixT H = this->compute_H_matrix(xTrain);
 		matrixT lhs = H.transpose() * H + matrixT::Identity(this->m_numNeuron, this->m_numNeuron) * this->m_regConst;
