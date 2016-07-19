@@ -1,6 +1,6 @@
 % test.m
 if ~exist('loadMNIST', 'var') || ~loadMNIST
-    run('C:\Users\NTU\data\mnist\load_mnist_all.m');
+    run('/media/leoyolo/OS/Users/NTU/data/mnist/load_mnist_all.m');
 end
 rng('shuffle');
 perm = randperm(size(xTrain, 1));
