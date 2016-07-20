@@ -116,17 +116,19 @@ static void oselm_test(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
     if (nrhs == 5)
     {
         threshold = mxGetScalar(prhs[4]);
-        if (oselmClassifier->get_num_classes() == 1)
+        if (oselmClassifier->get_num_classes() > 1)
             mexWarnMsgTxt("Input threshold is redundant and is not used.");
     }
     vector<double> stats = oselmClassifier->oselm_test(xTestPtr, (int)xrows, (int)xcols,
             yTestPtr, (int)yrows, (int)ycols, threshold);
-    if (nlhs > 0)
+    if (ycols == 1)
+        mxCheck(stats.size() == 3, "Output size does not match: expecting 3 outputs {acc, det, fa}");
+    else
+        mxCheck(stats.size() == 1, "Output size does not match: expecting 1 output (acc)");
+    mxCheck(stats.size() >= nlhs, "More output arguments are required.");
+    for (auto i = 0; i < nlhs; ++i)
     {
-        plhs[0] = mxCreateDoubleMatrix((int)stats.size(), 1, mxREAL);
-        double *statsPtr = mxGetPr(plhs[0]);
-        for (int i = 0; i < stats.size(); ++i)
-            statsPtr[i] = stats[i];
+        plhs[i] = mxCreateDoubleScalar(stats[i]);
     }
     return;
 }

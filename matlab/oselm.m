@@ -28,16 +28,16 @@ classdef oselm < handle
         end
         
         %% compute_score: compute score given samples
-        function varargout = compute_score(this, xTrain, varargin)
+        function scores = compute_score(this, xTrain, varargin)
             assert(this.isTrained);
-            [varargout{1:nargout}] = oselm_mex('compute_score', this.objectHandle, xTrain);
+            scores = oselm_mex('compute_score', this.objectHandle, xTrain);
             % rescale to probabilty distribution (sum each row to 1)
             % The last term determines whether normalization should be performed.
-            normalized = true;
+            normalized = false;
             if nargin > 2, normalized = varargin{1}; end
             if normalized
-                varargout{1} = bsxfun(@rdivide, exp(varargout{1}), sum(exp(varargout{1}), 2));
-                varargout{1}(isnan(varargout{1})) = 0;
+                scores = bsxfun(@rdivide, exp(scores{1}), sum(exp(scores{1}), 2));
+                scores(isnan(scores{1})) = 0;
             end
         end
         
@@ -76,9 +76,9 @@ classdef oselm < handle
             this.isTrained = true;
         end
         %% Test
-        function varargout = test(this, xTest, yTest)
+        function varargout = test(this, xTest, yTest, varargin)
             assert(this.isTrained);
-            [varargout{1:nargout}] = oselm_mex('test', this.objectHandle, xTest, yTest);
+            [varargout{1:nargout}] = oselm_mex('test', this.objectHandle, xTest, yTest, varargin{:});
         end
     end
 end

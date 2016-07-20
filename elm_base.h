@@ -205,9 +205,10 @@ public:
 						trueNeg++;
 				}
 			}
-			accuracy = static_cast<dataT>(truePos + trueNeg) / (truePos + trueNeg + falsePos + falseNeg);
-			auto falseAlarm = static_cast<dataT>(falsePos) / (falsePos + trueNeg);
-			auto probClassification = static_cast<dataT>(truePos) / (truePos + falseNeg);
+			elm_assert(truePos+trueNeg+falsePos+falseNeg == yTest.rows());
+			accuracy = (dataT)(truePos + trueNeg) / (dataT)(truePos + trueNeg + falsePos + falseNeg);
+			auto falseAlarm = (dataT)(falsePos) / (dataT)(falsePos + trueNeg);
+			auto probClassification = (dataT)(truePos) / (dataT)(truePos + falseNeg);
 			m_os << "Probability of Detection/Classification: " << probClassification << "\n";
 			m_os << "False Alarm: " << falseAlarm << "\n";
 			statistics.push_back(accuracy);
