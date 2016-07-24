@@ -6,8 +6,17 @@ classdef oselm < handle
     end
     methods
         %% Constructor - Create a new C++ class instance 
+        % Note that matlab seems not supporting overloadding constructor.
         function this = oselm(numNeuron, varargin)
-            this.objectHandle = oselm_mex('new', numNeuron, varargin{:});
+            if isnumeric(numNeuron)
+                this.objectHandle = oselm_mex('new', numNeuron, varargin{:});
+            elseif ischar(numNeuron)
+                this.objectHandle = oselm_mex('new', 100, 1);
+                this.load_snapshot(numNeuron);
+                this.isTrained = true;
+            else
+                error('oselm:new:invalid output');
+            end
         end
         
         %% Destructor - Destroy the C++ class instance
