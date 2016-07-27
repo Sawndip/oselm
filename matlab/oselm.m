@@ -60,6 +60,9 @@ classdef oselm < handle
         
         %% load_snapshot: load a saved snapshot
         function load_snapshot(this, filename)
+            if ~exist(filename, 'file')
+                error('Cannot find %s', filename);
+            end
             oselm_mex('load_snapshot', this.objectHandle, filename);
             this.isTrained = true;
         end
