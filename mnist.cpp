@@ -1,5 +1,9 @@
 #include "mnist.h"
-
+#if defined(_MSC_VER)
+#define byteswap32 _byteswap_ulong
+#elif defined(__GNUC__) || defined(__GNUG__)
+#define byteswap32 __builtin_bswap32
+#endif
 void mnist::load_images(const string &filename, int flag)
 {
 	assert(flag == MNIST_TRAIN || flag == MNIST_TEST);
@@ -9,7 +13,7 @@ void mnist::load_images(const string &filename, int flag)
 	assert(sizeof(magic) == 4);
 	int r0 = fread(&magic, sizeof magic, 1, mnistImages);
 	assert(r0 == 1);
-	magic = _byteswap_ulong(magic);	// This is the trick.
+	magic = byteswap32(magic);	// This is the trick.
 	assert(magic == 2051);
 
 	int32_t numImages;
@@ -18,9 +22,9 @@ void mnist::load_images(const string &filename, int flag)
 	int r1 = fread(&numImages, sizeof numImages, 1, mnistImages);	//TODO: error handling for whether reading is successful
 	int r2 = fread(&numRows, sizeof numRows, 1, mnistImages);
 	int r3 = fread(&numCols, sizeof numCols, 1, mnistImages);
-	numImages = _byteswap_ulong(numImages);
-	numRows = _byteswap_ulong(numRows);
-	numCols = _byteswap_ulong(numCols);
+	numImages = byteswap32(numImages);
+	numRows = byteswap32(numRows);
+	numCols = byteswap32(numCols);
 	assert(r1 == 1);
 	assert(r2 == 1);
 	assert(r3 == 1);
@@ -56,11 +60,11 @@ void mnist::load_labels(const string &filename, int flag)
 	assert(mnistLabels);
 	int32_t magic;
 	fread(&magic, sizeof magic, 1, mnistLabels);
-	magic = _byteswap_ulong(magic);
+	magic = byteswap32(magic);
 	assert(magic == 2049);
 	int32_t numLabels;
 	int r1 = fread(&numLabels, sizeof numLabels, 1, mnistLabels);
-	numLabels = _byteswap_ulong(numLabels);
+	numLabels = byteswap32(numLabels);
 	assert(r1 == 1);
 
 	vector<uint8_t> labels;

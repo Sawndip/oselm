@@ -177,9 +177,9 @@ void test_load()
 
 int main()
 {
-	//test_elm();
-//	test_oselm();
-	test_save();
-	test_load();
+	test_elm();
+	//test_oselm();
+	//test_save();
+	//test_load();
 	return 0;
 }
