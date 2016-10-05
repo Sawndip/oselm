@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project(OSELM)
+find_package(OpenCV 3 REQUIRED PATHS /opt/opencv3/share/OpenCV/)
+SET(CMAKE_CXX_FLAGS "-std=c++11 -Wall -pg")
+add_executable(OSELM mnist.cpp main.cpp)
+target_include_directories(OSELM PUBLIC /home/leoyolo/src/eigen-329)
+target_link_libraries(OSELM ${OpenCV_LIBS})
