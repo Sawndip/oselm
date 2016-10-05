@@ -80,5 +80,23 @@ classdef oselm < handle
             assert(this.isTrained);
             [varargout{1:nargout}] = oselm_mex('test', this.objectHandle, xTest, yTest);
         end
+        
+        %% Get the weight matrix
+        function weight = get_weight(this)
+            assert(this.isTrained);
+            weight = oselm_mex('get_weight', this.objectHandle);
+        end
+
+        %% Get beta matrix
+        function beta = get_beta(this)
+            assert(this.isTrained);
+            beta = oselm_mex('get_beta', this.objectHandle);
+        end
+
+        %% Get P matrix
+        function P = get_P(this)
+            assert(this.isTrained);
+            P = oselm_mex('get_P', this.objectHandle);
+        end
     end
 end

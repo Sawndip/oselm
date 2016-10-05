@@ -284,6 +284,8 @@ public:
 	int get_num_neuron() const { return m_numNeuron; }
 	dataT get_random_init_range() const { return m_range; }
 	dataT get_regularity_const() const { return m_regConst; }
+	const dataT *get_weight() const {return m_weight.data();}
+	const dataT *get_beta() const {return m_beta.data();}
 	clock_t tic() { m_timer = std::clock(); return m_timer; }
 	double toc() const
 	{

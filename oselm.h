@@ -115,6 +115,8 @@ public:
 		return 0;
 	}
 
+	const dataT *get_P() const {return m_P.data();}
+
 protected:
 	matrixT m_P;	// The only matrix that is needed to store.  See paper for details.
 };

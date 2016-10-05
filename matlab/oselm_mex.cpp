@@ -4,10 +4,40 @@
 #include <map>
 #include <string>
 #include <functional>
+#include <cstring>
+#include <iostream>
+
+
+// Redirect streambuf contents to mexPrintf.
+// credits go to:
+// https://www.mathworks.com/matlabcentral/answers/132527-in-mex-files-where-does-output-to-stdout-and-stderr-go
+class mystream : public std::streambuf
+{
+protected:
+    virtual std::streamsize xsputn(const char *s, std::streamsize n) { 
+        mexPrintf("%.*s", n, s); return n; 
+    }
+    virtual int overflow(int c=EOF) { if (c != EOF) { mexPrintf("%.1s", &c); } return 1; }
+};
+static mystream stream;
+static std::ostream mout(&stream); // Bind ostream object to the stream, which is used for oselm output.
 
 typedef std::map<std::string, 
         std::function<void(int, mxArray **, int, const mxArray **)>> registryT;
 typedef oselm<double, true> oselmD;
+
+
+//utilities
+mxArray *create_matrix(const void *ptr, size_t M, size_t N) {
+        mxArray *arr_ptr = mxCreateDoubleMatrix(0, 0, mxREAL);
+        mxSetM(arr_ptr, M);
+        mxSetN(arr_ptr, N);
+        size_t mem_sz = sizeof(double)*M*N;
+        mxSetData(arr_ptr, mxMalloc(mem_sz)); // This is more efficient in allocating memory.
+        void *dest_ptr = mxGetData(arr_ptr);
+        std::memcpy(dest_ptr, ptr, mem_sz); 
+        return arr_ptr;
+}
 
 inline void mxCheck(bool expr, const char *msg)
 {
@@ -25,7 +55,7 @@ static void oselm_create(int nlhs, mxArray **plhs, int nrhs, const mxArray **prh
     double regConst = 0;
     if (nrhs == 3)
         regConst = mxGetScalar(prhs[2]);
-    plhs[0] = convertPtr2Mat<oselmD>(new oselmD((int)numNeuron, regConst));
+    plhs[0] = convertPtr2Mat<oselmD>(new oselmD((int)numNeuron, regConst, mout));
     return;
 }
 // Uasge: oselm_mex("delete", oselmObj);
@@ -193,6 +223,57 @@ static void oselm_print_variables(int nlhs, mxArray **plhs, int nrhs, const mxAr
     mexPrintf("m_range: %g\n", oselmClassifier->get_random_init_range());
     return;
 }
+
+// Usage: oselm_mex("get_weight", oselmObj)
+static void oselm_get_weight(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 2)
+        mexErrMsgTxt("Usage: oselm_mex(\"get_weight\", oselmObj)");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    auto num_neuron = oselmClassifier->get_num_neuron();
+    auto feat_len = oselmClassifier->get_feature_length();
+    const auto *weight_ptr = oselmClassifier->get_weight();
+    if (nlhs > 0)
+    {
+        // Note the size of weight matrix is num_neuron x feature_length
+        plhs[0] = create_matrix((const void *)weight_ptr, (size_t)num_neuron, (size_t)feat_len);
+    }
+}
+
+// Usage: oselm_mex("get_beta", oselmObj)
+static void oselm_get_beta(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 2)
+        mexErrMsgTxt("Usage: oselm_mex(\"get_beta\", oselmObj)");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    auto num_neuron  = oselmClassifier->get_num_neuron();
+    auto num_classes = oselmClassifier->get_num_classes();
+    const auto *beta_ptr = oselmClassifier->get_beta();
+    if (nlhs >0)
+    {
+        // beta is of size num_neuron x num_classes
+        plhs[0] = create_matrix((const void *)beta_ptr, (size_t)num_neuron, 
+            (size_t)num_classes);
+    }
+} 
+
+// P matrix is used for oselm.
+// Usage: oselm_mex("get_P", oselmObj)
+static void oselm_get_P(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
+{
+    if (nrhs != 2)
+        mexErrMsgTxt("Usage: oselm_mex(\"get_P\", oselmObj)");
+    oselmD *oselmClassifier = convertMat2Ptr<oselmD>(prhs[1]);
+    auto num_neuron  = oselmClassifier->get_num_neuron();
+    const auto *P_ptr = oselmClassifier->get_P();
+    if (nlhs >0)
+    {
+        // P is of size num_neuron x num_neuron
+        plhs[0] = create_matrix((const void *)P_ptr, (size_t)num_neuron, 
+            (size_t)num_neuron);
+    }
+} 
+
 static registryT handlers {
     {"new", oselm_create},
     {"delete", oselm_delete},
@@ -203,7 +284,10 @@ static registryT handlers {
     {"snapshot", oselm_snapshot},
     {"load_snapshot", oselm_load_snapshot},
     {"set_variables", oselm_set_variables},
-    {"print_variables", oselm_print_variables}
+    {"print_variables", oselm_print_variables},
+    {"get_weight", oselm_get_weight},
+    {"get_beta", oselm_get_beta},
+    {"get_P", oselm_get_P}
 };
 
 void mexFunction(int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs)
